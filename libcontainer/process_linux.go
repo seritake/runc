@@ -293,7 +293,7 @@ func (p *initProcess) start() error {
 	// Do this before syncing with child so that no children can escape the
 	// cgroup. We don't need to worry about not doing this and not being root
 	// because we'd be using the rootless cgroup manager in that case.
-	fmt.Printf("This is a test.")
+	fmt.Printf("initProcess: %v", p)
 	if err := p.manager.Apply(p.pid()); err != nil {
 		return newSystemErrorWithCause(err, "applying cgroup configuration for process")
 	}
