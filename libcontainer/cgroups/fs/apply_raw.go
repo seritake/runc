@@ -4,12 +4,14 @@ package fs
 
 import (
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sync"
 
+	//"github.com/davecgh/go-spew/spew"
 	"github.com/opencontainers/runc/libcontainer/cgroups"
 	"github.com/opencontainers/runc/libcontainer/configs"
 	libcontainerUtils "github.com/opencontainers/runc/libcontainer/utils"
@@ -83,6 +85,7 @@ func getCgroupRoot() (string, error) {
 	}
 
 	root, err := cgroups.FindCgroupMountpointDir()
+
 	if err != nil {
 		return "", err
 	}
@@ -130,6 +133,7 @@ func isIgnorableError(rootless bool, err error) bool {
 }
 
 func (m *Manager) Apply(pid int) (err error) {
+	fmt.Printf("raw apply method called")
 	if m.Cgroups == nil {
 		return nil
 	}
@@ -166,7 +170,7 @@ func (m *Manager) Apply(pid int) (err error) {
 		if err != nil {
 			// The non-presence of the devices subsystem is
 			// considered fatal for security reasons.
-			if cgroups.IsNotFound(err) && sys.Name() != "devices" {
+			if cgroups.IsNotFound(err) {
 				continue
 			}
 			return err
@@ -299,6 +303,7 @@ func getCgroupData(c *configs.Cgroup, pid int) (*cgroupData, error) {
 	}
 
 	// XXX: Do not remove this code. Path safety is important! -- cyphar
+
 	cgPath := libcontainerUtils.CleanPath(c.Path)
 	cgParent := libcontainerUtils.CleanPath(c.Parent)
 	cgName := libcontainerUtils.CleanPath(c.Name)

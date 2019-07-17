@@ -21,6 +21,8 @@ import (
 	"github.com/opencontainers/runc/libcontainer/utils"
 
 	"golang.org/x/sys/unix"
+
+	// for debugging purpose
 )
 
 // Synchronisation value for cgroup namespace setup.
@@ -293,7 +295,6 @@ func (p *initProcess) start() error {
 	// Do this before syncing with child so that no children can escape the
 	// cgroup. We don't need to worry about not doing this and not being root
 	// because we'd be using the rootless cgroup manager in that case.
-	fmt.Printf("initProcess: %v", p)
 	if err := p.manager.Apply(p.pid()); err != nil {
 		return newSystemErrorWithCause(err, "applying cgroup configuration for process")
 	}

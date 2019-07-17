@@ -8,10 +8,12 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
+	"github.com/davecgh/go-spew/spew"
 
 	units "github.com/docker/go-units"
 	"golang.org/x/sys/unix"
@@ -39,7 +41,12 @@ func FindCgroupMountpointAndRoot(cgroupPath, subsystem string) (string, string, 
 	// We are not using mount.GetMounts() because it's super-inefficient,
 	// parsing it directly sped up x10 times because of not using Sscanf.
 	// It was one of two major performance drawbacks in container start.
-	if !isSubsystemAvailable(subsystem) {
+	// spew.Dump(cgroupPath)
+	/*if !isSubsystemAvailableV2(cgroupPath, subsystem) {
+		return "", "", NewNotFoundError(subsystem)
+	}*/
+	// Todo: SubsystemAvailableV2まで実装したのでここから見ていく
+	if !isSubsystemAvailableV2(cgroupPath ,subsystem) {
 		return "", "", NewNotFoundError(subsystem)
 	}
 
@@ -84,6 +91,20 @@ func isSubsystemAvailable(subsystem string) bool {
 	return avail
 }
 
+func isSubsystemAvailableV2(cgroupPath string, subsystem string) bool {
+	dat, err := ioutil.ReadFile(path.Join(cgroupPath, "cgroup", "cgroup.controllers"))
+	if err != nil {
+		return false
+	}
+	cgroups := strings.Split(string(dat), " ")
+	for _, s := range cgroups {
+		if s == subsystem {
+			return true
+		}
+	}
+	return false
+}
+
 func GetClosestMountpointAncestor(dir, mountinfo string) string {
 	deepestMountPoint := ""
 	for _, mountInfoEntry := range strings.Split(mountinfo, "\n") {
@@ -120,7 +141,7 @@ func FindCgroupMountpointDir() (string, error) {
 			return "", fmt.Errorf("Found no fields post '-' in %q", text)
 		}
 
-		if postSeparatorFields[0] == "cgroup" {
+		if postSeparatorFields[0] == "cgroup2" {
 			// Check that the mount is properly formatted.
 			if numPostFields < 3 {
 				return "", fmt.Errorf("Error found less than 3 fields post '-' in %q", text)
