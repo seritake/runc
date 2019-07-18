@@ -5,6 +5,8 @@ package fs
 import (
 	"fmt"
 	"github.com/davecgh/go-spew/spew"
+
+	//"github.com/davecgh/go-spew/spew"
 	"io"
 	"io/ioutil"
 	"os"
@@ -85,7 +87,6 @@ func getCgroupRoot() (string, error) {
 	}
 
 	root, err := cgroups.FindCgroupMountpointDir()
-
 	if err != nil {
 		return "", err
 	}
@@ -162,14 +163,32 @@ func (m *Manager) Apply(pid int) (err error) {
 		return cgroups.EnterPid(m.Paths, pid)
 	}
 
-	for _, sys := range subsystems {
+	// 実質的なApply.
+	err = cgroups.CreateCgroup(filepath.Join(d.root, d.innerPath))
+	if err != nil {
+		return err
+	}
+
+	err = cgroups.WriteCgroupProc(filepath.Join(d.root, d.innerPath), d.pid)
+	if err != nil {
+		return err
+	}
+
+	m.Paths["cgroup"] = filepath.Join(d.root, d.innerPath)
+
+	/*for _, sys := range subsystems {
 		// TODO: Apply should, ideally, be reentrant or be broken up into a separate
 		// create and join phase so that the cgroup hierarchy for a container can be
 		// created then join consists of writing the process pids to cgroup.procs
+
 		p, err := d.path(sys.Name())
+
 		if err != nil {
 			// The non-presence of the devices subsystem is
 			// considered fatal for security reasons.
+
+			// 今回はdeviceサブシステムは考えない。v2でまともにdeviceサブシステムを作成するためには
+			// OCI runtime-specから考え直す必要がある
 			if cgroups.IsNotFound(err) {
 				continue
 			}
@@ -189,7 +208,7 @@ func (m *Manager) Apply(pid int) (err error) {
 			return err
 		}
 
-	}
+	}*/
 	return nil
 }
 
@@ -237,29 +256,18 @@ func (m *Manager) Set(container *configs.Config) error {
 	}
 
 	paths := m.GetPaths()
+	path := paths["cgroup"]
 	for _, sys := range subsystems {
-		path := paths[sys.Name()]
 		if err := sys.Set(path, container.Cgroups); err != nil {
-			if m.Rootless && sys.Name() == "devices" {
-				continue
-			}
-			// When m.Rootless is true, errors from the device subsystem are ignored because it is really not expected to work.
-			// However, errors from other subsystems are not ignored.
-			// see @test "runc create (rootless + limits + no cgrouppath + no permission) fails with informative error"
-			if path == "" {
-				// We never created a path for this cgroup, so we cannot set
-				// limits for it (though we have already tried at this point).
-				return fmt.Errorf("cannot set %s limit: container could not join or create cgroup", sys.Name())
-			}
-			return err
+			continue
 		}
 	}
 
-	if m.Paths["cpu"] != "" {
+	/*if m.Paths["cpu"] != "" {
 		if err := CheckCpushares(m.Paths["cpu"], container.Cgroups.Resources.CpuShares); err != nil {
 			return err
 		}
-	}
+	}*/
 	return nil
 }
 

@@ -13,9 +13,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"github.com/davecgh/go-spew/spew"
+	//"github.com/davecgh/go-spew/spew"
 
-	units "github.com/docker/go-units"
+	"github.com/docker/go-units"
 	"golang.org/x/sys/unix"
 )
 
@@ -59,11 +59,13 @@ func FindCgroupMountpointAndRoot(cgroupPath, subsystem string) (string, string, 
 	return findCgroupMountpointAndRootFromReader(f, cgroupPath, subsystem)
 }
 
+
 func findCgroupMountpointAndRootFromReader(reader io.Reader, cgroupPath, subsystem string) (string, string, error) {
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
 		txt := scanner.Text()
 		fields := strings.Fields(txt)
+		//spew.Dump(fields)
 		if len(fields) < 5 {
 			continue
 		}
@@ -147,14 +149,14 @@ func FindCgroupMountpointDir() (string, error) {
 				return "", fmt.Errorf("Error found less than 3 fields post '-' in %q", text)
 			}
 
-			return filepath.Dir(fields[4]), nil
+			return fields[4], nil
 		}
 	}
 	if err := scanner.Err(); err != nil {
 		return "", err
 	}
 
-	return "", NewNotFoundError("cgroup")
+	return "", NewNotFoundError("cgroup2")
 }
 
 type Mount struct {
@@ -489,6 +491,10 @@ func GetAllPids(path string) ([]int, error) {
 		return nil
 	})
 	return pids, err
+}
+
+func CreateCgroup(path string) error {
+	return os.MkdirAll(path, 0755);
 }
 
 // WriteCgroupProc writes the specified pid into the cgroup's cgroup.procs file

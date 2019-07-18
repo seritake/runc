@@ -49,6 +49,7 @@ func (s *CpuGroup) ApplyDir(path string, cgroup *configs.Cgroup, pid int) error 
 	return cgroups.WriteCgroupProc(path, pid)
 }
 
+// v2ではrt プロセスは未対応ゆえ今回は無視
 func (s *CpuGroup) SetRtSched(path string, cgroup *configs.Cgroup) error {
 	if cgroup.Resources.CpuRtPeriod != 0 {
 		if err := writeFile(path, "cpu.rt_period_us", strconv.FormatUint(cgroup.Resources.CpuRtPeriod, 10)); err != nil {
@@ -65,21 +66,24 @@ func (s *CpuGroup) SetRtSched(path string, cgroup *configs.Cgroup) error {
 
 func (s *CpuGroup) Set(path string, cgroup *configs.Cgroup) error {
 	if cgroup.Resources.CpuShares != 0 {
-		if err := writeFile(path, "cpu.shares", strconv.FormatUint(cgroup.Resources.CpuShares, 10)); err != nil {
+		if err := writeFile(path, "cpu.weight", strconv.FormatUint(cgroup.Resources.CpuShares, 10)); err != nil {
 			return err
 		}
 	}
-	if cgroup.Resources.CpuPeriod != 0 {
-		if err := writeFile(path, "cpu.cfs_period_us", strconv.FormatUint(cgroup.Resources.CpuPeriod, 10)); err != nil {
+	if cgroup.Resources.CpuPeriod != 0 && cgroup.Resources.CpuQuota != 0 {
+		if err := writeFile(path, "cpu.max", strconv.FormatInt(cgroup.Resources.CpuQuota, 10) + " " + strconv.FormatUint(cgroup.Resources.CpuPeriod, 10)); err != nil {
 			return err
 		}
 	}
-	if cgroup.Resources.CpuQuota != 0 {
+	/*if cgroup.Resources.CpuQuota != 0 {
 		if err := writeFile(path, "cpu.cfs_quota_us", strconv.FormatInt(cgroup.Resources.CpuQuota, 10)); err != nil {
 			return err
 		}
 	}
 	return s.SetRtSched(path, cgroup)
+	*/
+
+	return nil
 }
 
 func (s *CpuGroup) Remove(d *cgroupData) error {
