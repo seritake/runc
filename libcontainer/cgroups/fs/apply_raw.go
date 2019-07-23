@@ -133,7 +133,6 @@ func isIgnorableError(rootless bool, err error) bool {
 }
 
 func (m *Manager) Apply(pid int) (err error) {
-	fmt.Printf("raw apply method called")
 	if m.Cgroups == nil {
 		return nil
 	}
