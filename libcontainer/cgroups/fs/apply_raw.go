@@ -4,7 +4,6 @@ package fs
 
 import (
 	"fmt"
-	"github.com/davecgh/go-spew/spew"
 
 	//"github.com/davecgh/go-spew/spew"
 	"io"
@@ -175,40 +174,6 @@ func (m *Manager) Apply(pid int) (err error) {
 	}
 
 	m.Paths["cgroup"] = filepath.Join(d.root, d.innerPath)
-
-	/*for _, sys := range subsystems {
-		// TODO: Apply should, ideally, be reentrant or be broken up into a separate
-		// create and join phase so that the cgroup hierarchy for a container can be
-		// created then join consists of writing the process pids to cgroup.procs
-
-		p, err := d.path(sys.Name())
-
-		if err != nil {
-			// The non-presence of the devices subsystem is
-			// considered fatal for security reasons.
-
-			// 今回はdeviceサブシステムは考えない。v2でまともにdeviceサブシステムを作成するためには
-			// OCI runtime-specから考え直す必要がある
-			if cgroups.IsNotFound(err) {
-				continue
-			}
-			return err
-		}
-		m.Paths[sys.Name()] = p
-
-		if err := sys.Apply(d); err != nil {
-			// In the case of rootless (including euid=0 in userns), where an explicit cgroup path hasn't
-			// been set, we don't bail on error in case of permission problems.
-			// Cases where limits have been set (and we couldn't create our own
-			// cgroup) are handled by Set.
-			if isIgnorableError(m.Rootless, err) && m.Cgroups.Path == "" {
-				delete(m.Paths, sys.Name())
-				continue
-			}
-			return err
-		}
-
-	}*/
 	return nil
 }
 
